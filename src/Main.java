@@ -2,14 +2,6 @@
 	void create_AST();
 	void commit_file();
 	void commit_file_from_int(int);
-	
-	int f() {
-		control_file();
-		{
-			int cons;
-		}
-	}
-	
 	-----
 	{
 		a: Trie(null, {
@@ -29,7 +21,7 @@
 	}
  */
 
-import java.util.Scanner;
+import java.util.*;
 
 record Definition(String name, double completionValue) implements Completable {
 }
@@ -46,32 +38,73 @@ public class Main {
 				split = false;
 			}
 		}
-		System.out.println(abbr);
 		return abbr.toString();
 	}
 	
 	public static void main(String[] args) {
-		var ctx = new CompletionContext<Definition>();
+		var scanner = new Scanner(System.in);
 		
-		var def1 = new Definition("control_file", 0.5);
-		ctx.put(def1.name(), def1);
-		ctx.put(abbreviate(def1.name()), def1);
+		var scope = new CompletionScope<Definition>();
 		
-		var def2 = new Definition("commit_file", 1.0);
-		ctx.put(def2.name(), def2);
-		ctx.put(abbreviate(def2.name()), def2);
-		
-		var def3 = new Definition("ConfigFile", 10);
-		ctx.put(def3.name(), def3);
-		ctx.put(abbreviate(def3.name()), def3);
+		for (;;) {
+			System.out.println("1. Add definition");
+			System.out.println("2. Remove definitions for name");
+			System.out.println("3. Autocomplete");
+			System.out.println("4. Exit");
+			switch (scanner.nextInt()) {
+				case 1 -> {
+					System.out.print("Name: ");
+					String name = scanner.next();
+					System.out.print("Value: ");
+					double value = scanner.nextDouble();
+					
+					var def = new Definition(name, value);
+					
+					scope.put(name, def);
+					var abbr = abbreviate(name);
+					if (!abbr.equals(name))
+						scope.put(abbr, def);
+				}
+				case 2 -> {
+					System.out.print("Name: ");
+					String name = scanner.next();
+					scope.removeAll(name);
+				}
+				case 3 -> {
+					System.out.print("Prefix: ");
+					String prefix = scanner.next();
+					
+					var completions = scope.getCompletions(prefix);
+					
+					if (completions.isEmpty()) {
+						System.out.println("NO COMPLETIONS");
+					} else {
+						System.out.println("Completions:");
+						for (var completion : completions)
+							System.out.println("\t" + completion.name() + ", value = " + completion.completionValue());
+					}
+				}
+				case 4 -> {
+					return;
+				}
+				default -> System.out.println("Invalid choice!");
+			}
+		}
+		/*var defs = List.of(
+			new Definition("control_file", 0.5),
+			new Definition("commit_file", 1.0),
+			new Definition("ConfigFile", 10),
+			new Definition("CF", 10)
+		);
+		for (var def : defs) {
+			ctx.put(def.name(), def);
+			var abbr = abbreviate(def.name());
+			if (!abbr.equals(def.name()))
+				ctx.put(abbr, def);
+		}
 		
 		System.out.print("enter completion prefix: ");
-		var prefix = new Scanner(System.in).nextLine();
-		var completions = ctx.getCompletions(prefix);
+		var prefix = scanner.nextLine();*/
 		
-		
-		System.out.println("COMPLETIONS:");
-		for (var completion : completions)
-			System.out.println(completion.name());
 	}
 }

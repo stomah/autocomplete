@@ -34,7 +34,7 @@ class Trie<Word> {
 	}
 }
 
-public class CompletionContext<Definition extends Completable> {
+public class CompletionScope<Definition extends Completable> {
 	private final Trie<Definition> trie = new Trie<>();
 	
 	public void put(String name, Definition def) {
@@ -47,17 +47,23 @@ public class CompletionContext<Definition extends Completable> {
 			t.words.remove(def);
 	}*/
 	
+	public void removeAll(String name) {
+		var t = trie.getChildren(name);
+		if (t != null)
+			t.words.clear();
+	}
+	
 	public List<Definition> getCompletions(String prefix) {
-		var completions = new ArrayList<Definition>();
-		
 		var startingTrie = trie.getChildren(prefix);
 		if (startingTrie == null)
-			return completions;
+			return Collections.emptyList();
 		
 		int fullMatchCount = startingTrie.words.size();
 		
 		var pendingTries = new ArrayDeque<Trie<Definition>>();
 		pendingTries.push(startingTrie);
+		
+		var completions = new HashSet<Definition>();
 		
 		while (!pendingTries.isEmpty()) {
 			var nextTrie = pendingTries.pop();
@@ -65,12 +71,13 @@ public class CompletionContext<Definition extends Completable> {
 			pendingTries.addAll(nextTrie.children.values());
 		}
 		
-		completions
+		var completionList = new ArrayList<>(completions);
+		completionList
 			.subList(0, fullMatchCount)
 			.sort(Comparator.comparingDouble(d -> -d.completionValue()));
-		completions
+		completionList
 			.subList(fullMatchCount, completions.size())
 			.sort(Comparator.comparingDouble(d -> -d.completionValue()));
-		return completions;
+		return completionList;
 	}
 }
